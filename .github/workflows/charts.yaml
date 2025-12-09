@@ -39,14 +39,31 @@ jobs:
             helm lint "$chart"
           done
 
-      - name: Helm diff plugin
+      - name: Install helm diff plugin
         run: |
             helm plugin install https://github.com/databus23/helm-diff --version v3.9.4
             helm diff version
 
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set kubeconfig
+        run: |
+          az aks get-credentials \
+            --resource-group terraform-infra \
+            --name dev-aks-cluster \
+            --admin \
+            --overwrite-existing
+
+          kubectl get node
+
       - name: Helm diff check
         run: |
-            for i in ${{ env.REPOS}}; do
+            for i in ${{ env.REPOS }}; do
               echo "Checking helm diff for $i"
 
               if helm diff upgrade $i ./charts/$i \
