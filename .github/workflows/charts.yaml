@@ -4,6 +4,10 @@ on:
   repository_dispatch:
     types: [charts-deployment-trigger]
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   REGISTRY: "ghcr.io/dolvladzio"
   ORG: "dolvladzio"
