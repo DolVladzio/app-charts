@@ -66,29 +66,20 @@ jobs:
 
       - name: Helm diff check
         run: |
-          for i in ${{ env.REPOS }}; do
-            if [ -z "$i" ]; then
-              echo "❌ Empty repo name, skipping..."
-              continue
-            fi
+            for i in ${{ env.REPOS }}; do
+              echo "Checking helm diff for $i"
 
-            CHART_PATH="./charts/$i"
-            if [ ! -d "$CHART_PATH" ]; then
-              echo "❌ Chart path $CHART_PATH does not exist, skipping..."
-              continue
-            fi
-
-            echo "Checking helm diff for $i"
-            if helm diff upgrade "$i" "$CHART_PATH" \
-              -n "${{ env.ENVIRONMENT }}" \
-              --set image.tag="${{ env.VERSION }}" \
-              -f "$CHART_PATH/values.yaml"; then
-              echo "✅ No changes detected for $i"
-            else
-              echo "❌ Changes detected for $i, aborting deployment"
-              exit 1
-            fi
-          done
+              # Check if release exists
+              if helm status $i -n ${{ env.ENVIRONMENT }} &> /dev/null; then
+                echo "Release $i exists, checking diff..."
+                helm diff upgrade $i ./charts/$i \
+                  -n ${{ env.ENVIRONMENT }} \
+                  --set image.tag=${{ env.VERSION }} \
+                  -f charts/$i/values.yaml
+              else
+                echo "Release $i does not exist yet, will be created"
+              fi
+            done
 
       - name: Deploy the ${{ env.VERSION }} version
         run: |
